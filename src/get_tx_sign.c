@@ -121,12 +121,20 @@ static void runSignTransactionInitUIStep() {
     switch (ctx->uiStep) {
         case UI_STEP_INIT_WARNING: {
             // display the warning
+#ifdef HAVE_BAGL
             ui_displayPaginatedText(
                     "Unusual Request",
                     "Be careful!",
                     this_fn
             );
-
+#endif
+#ifdef HAVE_NBGL
+            ui_displayWarning(
+                    "Unusual Request\nBe careful!",
+                    this_fn,
+                    ui_respondWithUserReject
+            );
+#endif
             // set next step
             ctx->uiStep = UI_STEP_INIT_CONFIRM;
             #ifndef FUZZING
@@ -135,14 +143,22 @@ static void runSignTransactionInitUIStep() {
         }
 
         case UI_STEP_INIT_CONFIRM: {
-            // ask user to confirm the key export
+            // ask user to confirm transaction start
+#ifdef HAVE_BAGL
             ui_displayPrompt(
                     "Start New",
                     "Transaction?",
                     this_fn,
                     ui_respondWithUserReject
             );
+#endif
+#ifdef HAVE_NBGL
+            ui_reviewStart(
+                    this_fn,
+                    ui_respondWithUserReject
+            );
 
+#endif
             // set next step
             ctx->uiStep = UI_STEP_INIT_RESPOND;
             #ifndef FUZZING
@@ -278,6 +294,7 @@ static void runSignTransactionUIStep() {
     // resume the stage based on previous result
     switch (ctx->uiStep) {
 
+#ifdef HAVE_BAGL
         case UI_STEP_TX_RECIPIENT: {
             // make sure the advertised address length is well inside the address buffer size
             ASSERT(ctx->tx.recipient.length <= SIZEOF(ctx->tx.recipient.value));
@@ -410,7 +427,80 @@ static void runSignTransactionUIStep() {
             break;
             #endif
         }
+#endif // HAVE_BAGL
+#ifdef HAVE_NBGL
+        case UI_STEP_TX_RECIPIENT: {
+            MEMCLEAR(&displayState, displayState);
+            ui_tx_fields_t * txFields = &displayState.txFields;
+            
+            // make sure the advertised address length is well inside the address buffer size
+            ASSERT(ctx->tx.recipient.length <= SIZEOF(ctx->tx.recipient.value));
 
+            // create formatted address buffer and format for display
+            if (ctx->tx.recipient.length > 0) {
+                addressFormatStr(
+                        ctx->tx.recipient.value, ctx->tx.recipient.length,
+                        &ctx->sha3Context,
+                        txFields->pairs[txFields->nbPairs].text, sizeof(txFields->pairs[txFields->nbPairs].text));
+            } else {
+                // smart contract targeted transaction
+                strcpy(txFields->pairs[txFields->nbPairs].text, "New Contract");
+            }
+
+            strncpy(txFields->pairs[txFields->nbPairs].header, "Send To", sizeof(txFields->pairs[txFields->nbPairs].header));
+
+            INCR_AND_ASSERT_PAIR_NB(&txFields->nbPairs);
+            
+            // make sure the advertised sender address length
+            // is well inside the address buffer size and that we do have one
+            ASSERT(ctx->tx.sender.length > 0);
+            ASSERT(ctx->tx.sender.length <= SIZEOF(ctx->tx.sender.value));
+
+            // create formatted address buffer and format for display
+            addressFormatStr(
+                    ctx->tx.sender.value, ctx->tx.sender.length,
+                    &ctx->sha3Context,
+                    txFields->pairs[txFields->nbPairs].text, sizeof(txFields->pairs[txFields->nbPairs].text));
+
+            // display the sender (derived from path) address
+            strncpy(txFields->pairs[txFields->nbPairs].header, "Send From", sizeof(txFields->pairs[txFields->nbPairs].header));
+
+            INCR_AND_ASSERT_PAIR_NB(&txFields->nbPairs);
+            
+            // make sure the advertised amount length is well inside the buffer size
+            ASSERT(ctx->tx.value.length <= SIZEOF(ctx->tx.value.value));
+
+            // create formatted address buffer and format for display
+            txGetFormattedAmount(&ctx->tx.value, WEI_TO_FTM_DECIMALS, txFields->pairs[txFields->nbPairs].text,
+                    sizeof(txFields->pairs[txFields->nbPairs].text));
+
+            // display transferred amount for the transaction
+            strncpy(txFields->pairs[txFields->nbPairs].header, "Amount (FTM)", sizeof(txFields->pairs[txFields->nbPairs].header));
+
+            INCR_AND_ASSERT_PAIR_NB(&txFields->nbPairs);
+
+            // make sure the advertised gas amount and price length is well inside the buffer size
+            ASSERT(ctx->tx.gasPrice.length <= SIZEOF(ctx->tx.gasPrice.value));
+            ASSERT(ctx->tx.startGas.length <= SIZEOF(ctx->tx.startGas.value));
+
+            // create formatted address buffer and format for display
+            txGetFormattedFee(&ctx->tx, WEI_TO_FTM_DECIMALS, txFields->pairs[txFields->nbPairs].text, 
+                    sizeof(txFields->pairs[txFields->nbPairs].text));
+
+            // display max fee for the transaction
+            strncpy(txFields->pairs[txFields->nbPairs].header, "Max Fee (FTM)", sizeof(txFields->pairs[txFields->nbPairs].header));
+
+            INCR_AND_ASSERT_PAIR_NB(&txFields->nbPairs);
+            
+            ui_reviewDisplay(txFields,this_fn,ui_respondWithUserReject,ctx->tx.isContractCall);
+
+            // set next step
+            ctx->uiStep = UI_STEP_TX_RESPOND;
+            #ifndef FUZZING
+            break;
+            #endif
+        }
+#endif // HAVE_NBGL
         case UI_STEP_TX_RESPOND: {
             // sanity check; make sure the signature is ready
             VALIDATE(ctx->responseReady == RESPONSE_READY_TAG, ERR_INVALID_DATA);
@@ -421,8 +511,10 @@ static void runSignTransactionUIStep() {
             // respond to host that it's ok to send transaction for signing
             io_send_buf(SUCCESS, (uint8_t * ) & ctx->signature, sizeof(ctx->signature));
 
+#ifdef HAVE_BAGL
             // switch user to idle; we are done here
             ui_idle();
+#endif // HAVE_BAGL
 
             // set invalid step so we never cycle around
             ctx->uiStep = UI_STEP_TX_INVALID;

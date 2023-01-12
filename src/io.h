@@ -37,7 +37,9 @@ void io_send_buf(uint16_t code, const uint8_t *buffer, size_t bufferSize);
 // ----------------------------------------------
 
 // io_seproxyhal_display implements display function proxy (see boilerplate).
+#ifdef HAVE_BAGL
 void io_seproxyhal_display(const bagl_element_t *element);
+#endif
 
 // io_event handles events based on seproxyhal spi buffer content.
 unsigned char io_event(unsigned char channel);

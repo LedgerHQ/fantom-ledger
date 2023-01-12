@@ -98,11 +98,20 @@ static void runGetPublicKeyUIStep() {
     switch (ctx->uiStep) {
         case UI_STEP_WARNING: {
             // display the warning
+#ifdef HAVE_BAGL
             ui_displayPaginatedText(
                     "Unusual Request",
                     "Be careful!",
                     this_fn
             );
+#endif
+#ifdef HAVE_NBGL
+            ui_displayWarning(
+                    "Unusual Request\nBe careful!",
+                    this_fn,
+                    ui_respondWithUserReject
+            );
+#endif
 
             // set next step
             ctx->uiStep = UI_STEP_DISPLAY_PATH;
@@ -110,6 +119,7 @@ static void runGetPublicKeyUIStep() {
         }
 
         case UI_STEP_DISPLAY_PATH: {
+#ifdef HAVE_BAGL
             // prep container for BIP44 path and format it
             char pathStr[100];
             bip44_pathToStr(&ctx->path, pathStr, SIZEOF(pathStr));
@@ -139,15 +149,40 @@ static void runGetPublicKeyUIStep() {
             ctx->uiStep = UI_STEP_RESPOND;
             break;
         }
+#endif
+#ifdef HAVE_NBGL
+            MEMCLEAR(&displayState, displayState);
+            ui_tx_fields_t * txFields = &displayState.txFields;
 
+            // prep container for BIP44 path and format it
+            bip44_pathToStr(&ctx->path, txFields->pairs[0].text, SIZEOF(txFields->pairs[0].text));
+
+            // BIP44 display header
+            strncpy(txFields->pairs[0].header, "Derivation Path", sizeof(txFields->pairs[0].header));
+                
+            // prep container for BIP44 path and format it
+            bip44_pathToStr(&ctx->path, txFields->pairs[0].text, SIZEOF(txFields->pairs[0].text));
+
+            ui_exportKeyConfirm(
+                   txFields,
+                   this_fn,
+                   ui_respondWithUserReject);
+
+            // set next step
+            ctx->uiStep = UI_STEP_RESPOND;
+
+            break;
+        }
+#endif
         case UI_STEP_RESPOND: {
             // make sure the public key is ready
             ASSERT(ctx->responseReady == RESPONSE_READY_TAG);
 
             // send the data to remote host and switch idle
             io_send_buf(SUCCESS, (uint8_t * ) & ctx->pubKey, SIZEOF(ctx->pubKey));
+#ifdef HAVE_BAGL
             ui_idle();
-
+#endif
             // set invalid step so we never cycle around
             ctx->uiStep = UI_STEP_INVALID;
             break;

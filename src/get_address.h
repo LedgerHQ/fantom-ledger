@@ -19,6 +19,9 @@ typedef struct {
         uint8_t buffer[64];
     } address;
     bool isShowAddress;
+#ifdef HAVE_NBGL
+    bool isShowPath;
+#endif
     int uiStep;
 } ins_get_address_context_t;
 

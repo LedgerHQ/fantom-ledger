@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 from time import sleep
+from conftest import wait_for_home_screen
 
 def get_makefile_version():
     path = str(Path(__file__).parent.parent.resolve()) + "/Makefile"
@@ -11,12 +12,10 @@ def get_makefile_version():
     patch = re.findall("(APPVERSION_P=)(.*)", makefile)[0][1]
     return major,minor,patch
     
-def test_get_version(cmd,firmware):
+def test_get_version(cmd,firmware,backend):
+    wait_for_home_screen(backend,firmware)
+    
     result: list = []
-    if firmware.device == "stax":
-        sleep(4) # Wait for idle menu to be displayed to get back in correct state.
-    else:
-        sleep(1)
     
     m,n,p = get_makefile_version()
 

@@ -13,6 +13,7 @@
 // ui_callback_fn_t declares callback function from user interaction.
 typedef void ui_callback_fn_t();
 
+#ifdef HAVE_BAGL
 // ui_callback_state_t declares states a callback pair can have.
 typedef enum {
     CALLBACK_NOT_RUN,
@@ -51,17 +52,6 @@ typedef struct {
     ui_callback_t callback;
 } ui_prompt_state_t;
 
-// ui_display_state_t merges both types of "display text & wait for decision" state together
-// in a single union. We never need both so we re-use the structure to save some space.
-// Notice the guard is on the beginning of both structures and so will always align the same way.
-typedef union {
-    ui_paginated_text_state_t paginatedText;
-    ui_prompt_state_t prompt;
-} ui_display_state_t;
-
-// ui_idle implements transaction to idle state
-void ui_idle(void);
-
 // ui_displayPaginatedText displays paginated text and waits for basic user
 // interaction; we don't need user to decide a course of action
 // so there is just one callback signaling that user did finish reading the text.
@@ -86,9 +76,6 @@ void ui_displayTxDetails(
         ui_callback_fn_t *confirm,
         ui_callback_fn_t *reject);
 
-// ui_displayBusy displays busy screen notifying end user that the device
-// is in the middle of processing stuff.
-void ui_displayBusy();
 
 // ui_doDisplayPrompt implements actual change in UX flow to show the configured prompt.
 void ui_doDisplayPrompt();
@@ -96,8 +83,6 @@ void ui_doDisplayPrompt();
 // ui_doDisplayPaginatedText implements actual change in UX flow to show the configured paginated text.
 void ui_doDisplayPaginatedText();
 
-// ui_doDisplayBusy implements actual change in UX flow to show the busy screen.
-void ui_doDisplayBusy();
 
 // ui_callbackConfirm implements action callback for confirmed prompt.
 void ui_callbackConfirm(ui_callback_t *cb);
@@ -113,25 +98,81 @@ void ui_assertPaginatedTextGuard();
 // so we know the state is set for prompt.
 void ui_assertPromptGuard();
 
-// ui_respondWithUserReject implements sending rejection response
-// to host and resetting current instruction from being processed
-// any further.
-void ui_respondWithUserReject();
-
-// displayState declares the common display state container shared between paginated text and prompt states.
-// We use this trick since only one of the two may happen at any time.
-extern ui_display_state_t displayState;
-
-// keep references to internal type specific states inside the shared state.
-static ui_paginated_text_state_t *paginatedTextState = &(displayState.paginatedText);
-static ui_prompt_state_t *promptState = &(displayState.prompt);
-
 // what guards we use for the shared state
 enum {
     UI_STATE_GUARD_PAGINATED_TEXT = 0xF0F0,
     UI_STATE_GUARD_PROMPT = 0x0F0F,
     UI_STATE_GUARD_TX_DETAIL = 0xF1F1,
 };
+
+#endif // HAVE_BAGL
+
+#ifdef HAVE_NBGL
+
+// Should be updated if new transaction types require more fields.
+#define MAX_FIELDS_PER_TRANSACTION 4
+
+static inline void INCR_AND_ASSERT_PAIR_NB(uint8_t * nbPairs) {
+    (*nbPairs)++;
+    ASSERT(*nbPairs <= MAX_FIELDS_PER_TRANSACTION);
+}
+
+typedef struct {
+    char header[30];
+    char text[200];
+} ui_field_pair_t;
+
+typedef struct {
+    ui_field_pair_t pairs[MAX_FIELDS_PER_TRANSACTION];
+    uint8_t nbPairs;
+} ui_tx_fields_t;
+
+void ui_displayWarning(const char * warning_text, ui_callback_fn_t *confirm, ui_callback_fn_t *reject);
+void ui_reviewStart(ui_callback_fn_t *confirm, ui_callback_fn_t *reject);
+void ui_reviewDisplay(ui_tx_fields_t *tx_fields, ui_callback_fn_t *confirm, ui_callback_fn_t *reject, bool contract_warning);
+void ui_verifyAddress(ui_tx_fields_t *tx_fields, ui_callback_fn_t *confirm, ui_callback_fn_t *reject, bool show_addr,bool show_path);
+void ui_exportKeyConfirm(ui_tx_fields_t *tx_fields, ui_callback_fn_t *confirm, ui_callback_fn_t *reject);
+
+#endif
+
+
+// ui_display_state_t merges both types of "display text & wait for decision" state together
+// in a single union. We never need both so we re-use the structure to save some space.
+// Notice the guard is on the beginning of both structures and so will always align the same way.
+typedef union {
+#ifdef HAVE_BAGL
+    ui_paginated_text_state_t paginatedText;
+    ui_prompt_state_t prompt;
+#endif
+#ifdef HAVE_NBGL
+    ui_tx_fields_t txFields;
+#endif
+} ui_display_state_t;
+
+// displayState declares the common display state container shared between paginated text and prompt states.
+// We use this trick since only one of the two may happen at any time.
+extern ui_display_state_t displayState;
+
+#ifdef HAVE_BAGL
+// keep references to internal type specific states inside the shared state.
+static ui_paginated_text_state_t *paginatedTextState = &(displayState.paginatedText);
+static ui_prompt_state_t *promptState = &(displayState.prompt);
+#endif
+
+// ui_idle implements transaction to idle state
+void ui_idle(void);
+
+// ui_respondWithUserReject implements sending rejection response
+// to host and resetting current instruction from being processed
+// any further.
+void ui_respondWithUserReject();
+
+// ui_displayBusy displays busy screen notifying end user that the device
+// is in the middle of processing stuff.
+void ui_displayBusy();
+
+// ui_doDisplayBusy implements actual change in UX flow to show the busy screen.
+void ui_doDisplayBusy();
 
 // ui_crash_handler implements critical UI failure handling.
 // We don't deal with crashes on UI, we reset the device in that case.
