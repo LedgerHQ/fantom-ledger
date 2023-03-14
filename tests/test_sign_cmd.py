@@ -30,7 +30,7 @@ def test_sign_simple(cmd,navigator,firmware):
     else:
         sleep(1)
     
-    bip32_path="44'/60'/1'/0/0"
+    bip32_path="m/44'/60'/1'/0/0"
 
     transaction = Transaction(
         txType=0xEB,
@@ -70,7 +70,7 @@ def test_sign_simple(cmd,navigator,firmware):
 def test_sign_warning_unusual(cmd,navigator,firmware):
     sleep(1)
     
-    bip32_path="44'/60'/1/0/0" # Unhardened account ID.
+    bip32_path="m/44'/60'/1/0/0" # Unhardened account ID.
 
     transaction = Transaction(
         txType=0xEB,
@@ -109,7 +109,7 @@ def test_sign_warning_unusual(cmd,navigator,firmware):
 
 
 def test_sign_reject_by_user(cmd,navigator,backend,firmware):
-    bip32_path="44'/60'/1'/0/0"
+    bip32_path="m/44'/60'/1'/0/0"
 
     transaction = Transaction(
         txType=0xEB,
@@ -160,7 +160,7 @@ def test_sign_reject_by_user(cmd,navigator,backend,firmware):
         
     
 def test_sign_wrong_chain_id(cmd,navigator,backend,firmware):    
-    bip32_path="44'/60'/1'/0/0"
+    bip32_path="m/44'/60'/1'/0/0"
 
     transaction = Transaction(
         txType=0xEB,

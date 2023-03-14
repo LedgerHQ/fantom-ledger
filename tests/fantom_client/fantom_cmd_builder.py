@@ -4,7 +4,7 @@ import struct
 from typing import List, Tuple, Union, Iterator, cast
 
 from fantom_client.transaction import Transaction
-from fantom_client.utils import packed_bip32_path_from_string
+from ragger.bip import pack_derivation_path
 
 MAX_APDU_LEN: int = 255
 
@@ -114,7 +114,7 @@ class FantomCommandBuilder:
             APDU command for INS_GET_PUBLIC_KEY.
 
         """
-        cdata = packed_bip32_path_from_string(bip32_path)
+        cdata = pack_derivation_path(bip32_path)
           
         return self.serialize(cla=self.CLA,
                               ins=InsType.INS_GET_PUBLIC_KEY,
@@ -138,7 +138,7 @@ class FantomCommandBuilder:
             APDU command for INS_GET_ADDRESS.
 
         """
-        cdata = packed_bip32_path_from_string(bip32_path)
+        cdata = pack_derivation_path(bip32_path)
         return self.serialize(cla=self.CLA,
                               ins=InsType.INS_GET_ADDRESS,
                               p1=0x02, # Display address
@@ -222,7 +222,7 @@ class FantomCommandBuilder:
             APDU command chunk for INS_SIGN_TX.
 
         """
-        cdata = packed_bip32_path_from_string(bip32_path)
+        cdata = pack_derivation_path(bip32_path)
         
         return self.serialize(cla=self.CLA,
                               ins=InsType.INS_SIGN_TX,

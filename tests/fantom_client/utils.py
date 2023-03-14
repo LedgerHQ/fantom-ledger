@@ -24,29 +24,6 @@ def parse_sign_response(response : bytes) -> Tuple[bytes, bytes, bytes]:
     return (v, r, s)
 
 
-def bip32_path_from_string(path: str) -> List[bytes]:
-    splitted_path: List[str] = path.split("/")
-
-    if not splitted_path:
-        raise Exception(f"BIP32 path format error: '{path}'")
-
-    if "m" in splitted_path and splitted_path[0] == "m":
-        splitted_path = splitted_path[1:]
-
-    return [int(p).to_bytes(4, byteorder="big") if "'" not in p
-            else (0x80000000 | int(p[:-1])).to_bytes(4, byteorder="big")
-            for p in splitted_path]
-
-
-def packed_bip32_path_from_string(path: str) -> bytes:
-    bip32_paths = bip32_path_from_string(path)
-    
-    return b"".join([
-            len(bip32_paths).to_bytes(1, byteorder="big"),
-            *bip32_paths
-        ])
-
-
 def write_varint(n: int) -> bytes:
     if n < 0xFC:
         return n.to_bytes(1, byteorder="little")

@@ -9,7 +9,7 @@ from conftest import MNEMONIC
 def test_get_address(cmd,navigator,firmware,backend):
     result: list = []
 
-    bip32_path="44'/60'/0'/0/0"
+    bip32_path="m/44'/60'/0'/0/0"
 
     path = Path(currentframe().f_code.co_name)
     

@@ -14,7 +14,7 @@ def test_get_public_key(cmd,navigator,firmware,backend):
         sleep(1)
     result: list = []
 
-    bip32_path="44'/60'/0'/0/0"
+    bip32_path="m/44'/60'/0'/0/0"
 
     path = Path(currentframe().f_code.co_name)
     
