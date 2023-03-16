@@ -10,6 +10,8 @@ src/glyphs.h
 fuzzing/build*
 fuzzing/corpus/
 fuzzing/coverage/
+build/
+tests/snapshots-tmp/
 
 # Rule out IDE-s
 .idea
