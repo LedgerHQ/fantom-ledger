@@ -195,7 +195,7 @@ static void runGetAddressUIStep() {
             bip44_pathToStr(&ctx->path, txFields->pairs[0].text, SIZEOF(txFields->pairs[0].text));
 
             // display BIP44 path
-            strncpy(txFields->pairs[0].header, "Derivation Path", sizeof(txFields->pairs[0].header));
+            strlcpy(txFields->pairs[0].header, "Derivation Path", sizeof(txFields->pairs[0].header));
             
             // make sure the address is well inside the available buffer
             ASSERT(ctx->address.size < SIZEOF(ctx->address.buffer));

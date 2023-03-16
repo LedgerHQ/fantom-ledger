@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import re
 from pathlib import Path
-from time import sleep
-from conftest import wait_for_home_screen
+from conftest import wait_for_text, SearchStrings
+
+home_txt: SearchStrings = {"nano": "Fantom", "stax": "This app confirms"}
 
 def get_makefile_version():
     path = str(Path(__file__).parent.parent.resolve()) + "/Makefile"
@@ -13,7 +14,7 @@ def get_makefile_version():
     return major,minor,patch
     
 def test_get_version(cmd,firmware,backend):
-    wait_for_home_screen(backend,firmware)
+    wait_for_text(backend,firmware,home_txt)
     
     result: list = []
     

@@ -5,7 +5,7 @@ from fantom_client.transaction import Transaction
 from ragger.navigator import NavInsID, NavIns
 from ragger.backend import RaisePolicy
 from ragger.error import ExceptionRAPDU
-from conftest import wait_for_home_screen, wait_loading_screen
+from conftest import wait_for_text, SearchStrings
 
 NANOS_NAV_INSTRUCTIONS = [NavIns(NavInsID.RIGHT_CLICK),
                          NavIns(NavInsID.RIGHT_CLICK),
@@ -25,9 +25,11 @@ NANOXSP_NAV_INSTRUCTIONS = [
                          NavIns(NavInsID.BOTH_CLICK),
                          NavIns(NavInsID.BOTH_CLICK)]
 
+home_txt: SearchStrings = {"nano": "Fantom", "stax": "This app confirms"}
+loading_txt: SearchStrings = {"nano": "Please", "stax": "Loading"}
+
 def test_sign_simple(cmd,navigator,firmware,backend):
-    wait_for_home_screen(backend,firmware)
-    
+    wait_for_text(backend,firmware,home_txt)
     bip32_path="m/44'/60'/1'/0/0"
 
     transaction = Transaction(
@@ -51,7 +53,7 @@ def test_sign_simple(cmd,navigator,firmware,backend):
         pass
         
     with cmd.simple_sign_tx_finalize() as ex:
-        wait_loading_screen(backend,firmware)
+        wait_for_text(backend,firmware,loading_txt,wait_until_not_displayed=True)
         path = Path(str(path)+"_finalize")
         if firmware.device == "nanos":
             navigator.navigate_and_compare(Path(__file__).parent.resolve(),path,NANOS_NAV_INSTRUCTIONS,screen_change_before_first_instruction = False,screen_change_after_last_instruction = False)
@@ -65,7 +67,7 @@ def test_sign_simple(cmd,navigator,firmware,backend):
 
 
 def test_sign_warning_unusual(cmd,navigator,firmware,backend):
-    wait_for_home_screen(backend,firmware)
+    wait_for_text(backend,firmware,home_txt)
     
     bip32_path="m/44'/60'/1/0/0" # Unhardened account ID.
 
@@ -90,7 +92,7 @@ def test_sign_warning_unusual(cmd,navigator,firmware,backend):
         pass
         
     with cmd.simple_sign_tx_finalize() as ex:
-        wait_loading_screen(backend,firmware)
+        wait_for_text(backend,firmware,loading_txt,wait_until_not_displayed=True)
         path = Path(str(path)+"_finalize")
         if firmware.device == "nanos":
             navigator.navigate_and_compare(Path(__file__).parent.resolve(),path,NANOS_NAV_INSTRUCTIONS, screen_change_before_first_instruction = False,screen_change_after_last_instruction = False)
@@ -104,7 +106,7 @@ def test_sign_warning_unusual(cmd,navigator,firmware,backend):
 
 
 def test_sign_reject_by_user(cmd,navigator,backend,firmware):
-    wait_for_home_screen(backend,firmware)
+    wait_for_text(backend,firmware,home_txt)
 
     bip32_path="m/44'/60'/1'/0/0"
 
@@ -130,7 +132,7 @@ def test_sign_reject_by_user(cmd,navigator,backend,firmware):
         
     try:
         with cmd.simple_sign_tx_finalize() as ex:
-            wait_loading_screen(backend,firmware)
+            wait_for_text(backend,firmware,loading_txt,wait_until_not_displayed=True)
             path = Path(str(path)+"_finalize")
             backend.raise_policy = RaisePolicy.RAISE_ALL
             if firmware.device == "nanos":
@@ -155,7 +157,7 @@ def test_sign_reject_by_user(cmd,navigator,backend,firmware):
         
     
 def test_sign_wrong_chain_id(cmd,navigator,backend,firmware):    
-    wait_for_home_screen(backend,firmware)    
+    wait_for_text(backend,firmware,home_txt)    
 
     bip32_path="m/44'/60'/1'/0/0"
 

@@ -10,9 +10,6 @@
 // We use this trick since only one of the two may happen at any time.
 ui_display_state_t displayState;
 
-// make sure the SDK didn't switch to multi-byte character sets.
-STATIC_ASSERT(SIZEOF(uint8_t) == SIZEOF(char), "bad char size");
-
 // G_ux is a magic global variable implicitly referenced by the UX_ macros.
 // Apps should never need to reference it directly.
 ux_state_t G_ux;
