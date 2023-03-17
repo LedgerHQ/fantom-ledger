@@ -14,7 +14,7 @@ jobs:
     uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_build.yml@v1
     with:
       upload_app_binaries_artifact: compiled_app_binaries
-      run_for_devices: '["nanos", "nanox", "nanosp"]'
+      run_for_devices: '["nanos", "nanox", "nanosp", "stax"]'
       
   ragger_tests:
     name: Functional tests with Ragger
@@ -23,7 +23,7 @@ jobs:
     with:
       download_app_binaries_artifact: compiled_app_binaries
       test_dir: tests
-      run_for_devices: '["nanos", "nanox", "nanosp"]'
+      run_for_devices: '["nanos", "nanox", "nanosp", "stax"]'
 
   scan-build:
     name: Clang Static Analyzer

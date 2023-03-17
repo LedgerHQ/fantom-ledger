@@ -1,3 +1,4 @@
+#ifdef HAVE_BAGL
 #include <os_io_seproxyhal.h>
 #include <ux.h>
 #include "ui_helpers.h"
@@ -176,3 +177,4 @@ void ui_doDisplayBusy() {
     // start the busy flow
     ux_flow_init(0, ux_busy_flow, NULL);
 }
+#endif //  HAVE_BAGL

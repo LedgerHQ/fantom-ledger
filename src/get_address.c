@@ -79,7 +79,12 @@ void handleGetAddress(
             break;
         case POLICY_PROMPT:
             // see runGetAddressUIStep comment below to get the right starting point
+#ifdef HAVE_BAGL
             ctx->uiStep = (ctx->isShowAddress ? UI_STEP_ADDRESS : UI_STEP_CONFIRM);
+#endif
+#ifdef HAVE_NBGL
+            ctx->uiStep = UI_STEP_CONFIRM;
+#endif
             break;
         case POLICY_ALLOW:
             ctx->uiStep = UI_STEP_RESPOND;
@@ -106,17 +111,28 @@ static void runGetAddressUIStep() {
     switch (ctx->uiStep) {
         case UI_STEP_WARNING: {
             // display the warning
+#ifdef HAVE_BAGL
             ui_displayPaginatedText(
                     "Unusual Request",
                     "Be careful!",
                     this_fn
             );
-
-            // set next step
+            // set next step            
             ctx->uiStep = UI_STEP_DISPLAY_PATH;
+#endif
+#ifdef HAVE_NBGL
+            ui_displayWarning(
+                    "Unusual derivation\npath be careful!",
+                    this_fn,
+                    ui_respondWithUserReject
+            );
+            ctx->isShowPath = true;
+            ctx->uiStep = UI_STEP_CONFIRM;
+#endif
             break;
         }
 
+#ifdef HAVE_BAGL
         case UI_STEP_DISPLAY_PATH: {
             // prep container for BIP44 path and format it
             char pathStr[100];
@@ -154,7 +170,10 @@ static void runGetAddressUIStep() {
             break;
         }
 
+#endif
         case UI_STEP_CONFIRM: {
+#ifdef HAVE_BAGL
+
             // ask user to confirm the key export
             ui_displayPrompt(
                     "Confirm",
@@ -167,7 +186,39 @@ static void runGetAddressUIStep() {
             ctx->uiStep = UI_STEP_RESPOND;
             break;
         }
+#endif
+#ifdef HAVE_NBGL
+            MEMCLEAR(&displayState, displayState);
+            ui_tx_fields_t * txFields = &displayState.txFields;
 
+            // prep container for BIP44 path and format it
+            bip44_pathToStr(&ctx->path, txFields->pairs[0].text, SIZEOF(txFields->pairs[0].text));
+
+            // display BIP44 path
+            strlcpy(txFields->pairs[0].header, "Derivation Path", sizeof(txFields->pairs[0].header));
+            
+            // make sure the address is well inside the available buffer
+            ASSERT(ctx->address.size < SIZEOF(ctx->address.buffer));
+
+            // prep container for BIP44 path and format it
+            bip44_pathToStr(&ctx->path, txFields->pairs[0].text, SIZEOF(txFields->pairs[0].text));
+
+            // create formatted address buffer and format for display
+            addressFormatStr(ctx->address.buffer, ctx->address.size, &ctx->sha3Context, txFields->pairs[1].text, SIZEOF(txFields->pairs[1].text));
+
+            ui_verifyAddress(
+                   txFields,
+                   this_fn,
+                   ui_respondWithUserReject,
+                   ctx->isShowAddress,
+                   ctx->isShowPath);
+
+            // set next step
+            ctx->uiStep = UI_STEP_RESPOND;
+
+            break;
+        }
+#endif
         case UI_STEP_RESPOND: {
             // make sure the address is ready
             ASSERT(ctx->responseReady == RESPONSE_READY_TAG);
@@ -179,8 +230,9 @@ static void runGetAddressUIStep() {
             // we don't send the whole address buffer, some space is probably unused
             // we send only the first byte (address length) + the bytes of the active address part
             io_send_buf(SUCCESS, (uint8_t * ) & ctx->address, 1 + ctx->address.size);
+#ifdef HAVE_BAGL
             ui_idle();
-
+#endif
             // set invalid step so we never cycle around
             ctx->uiStep = UI_STEP_INVALID;
             break;

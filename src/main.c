@@ -24,27 +24,6 @@
 // The app is designed for specific Ledger API level.
 STATIC_ASSERT(CX_APILEVEL >= API_LEVEL_MIN || CX_APILEVEL <= API_LEVEL_MAX, "bad api level");
 
-// ui_idle displays the main menu. Note that your app isn't required to use a
-// menu as its idle screen; you can define your own completely custom screen.
-void ui_idle(void) {
-    // no instruction is being processed; the last one called idle
-    currentIns = INS_NONE;
-
-    // we support only Nano S/S+ and Nano X devices
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2)
-    // reserve a display stack slot if none yet
-    if(G_ux.stack_count == 0) {
-        ux_stack_push();
-    }
-
-    // initiate the idle flow
-    ux_flow_init(0, ux_idle_flow, NULL);
-#else
-    // unknown device?
-    STATIC_ASSERT(false, "unknown target device");
-#endif
-}
-
 // fantom_main implements main application loop.
 // It reads APDU messages and process them through corresponding message handlers.
 static void fantom_main(void) {

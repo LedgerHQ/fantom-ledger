@@ -22,12 +22,13 @@ include $(BOLOS_SDK)/Makefile.defines
 
 DEFINES_LIB = USE_LIB_ETHEREUM
 APP_LOAD_PARAMS= --curve secp256k1 --path "44'/60'" --appFlags 0x240 $(COMMON_LOAD_PARAMS)
+
 APP_LOAD_PARAMS += --tlvraw 9F:01
 DEFINES += HAVE_PENDING_REVIEW_SCREEN
 
-APPVERSION_M=1
+APPVERSION_M=2
 APPVERSION_N=0
-APPVERSION_P=7
+APPVERSION_P=0
 APPVERSION="$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)"
 APPNAME = "Fantom FTM"
 
@@ -35,6 +36,8 @@ DEFINES += $(DEFINES_LIB)
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 	ICONNAME=icons/nanos_fantom.gif
+else ifeq ($(TARGET_NAME),TARGET_STAX)
+	ICONNAME=icons/stax_fantom.gif
 else
 	ICONNAME=icons/nanox_fantom.gif
 endif
@@ -49,7 +52,7 @@ all: default
 # Platform #
 ############
 DEFINES   += OS_IO_SEPROXYHAL
-DEFINES   += HAVE_BAGL HAVE_SPRINTF
+DEFINES   += HAVE_SPRINTF
 DEFINES   += LEDGER_MAJOR_VERSION=$(APPVERSION_M) LEDGER_MINOR_VERSION=$(APPVERSION_N) LEDGER_PATCH_VERSION=$(APPVERSION_P)
 
 DEFINES   += UNUSED\(x\)=\(void\)x
@@ -71,13 +74,15 @@ DEFINES   += HAVE_WEBUSB WEBUSB_URL_SIZE_B=0 WEBUSB_URL=""
 DEFINES += HAVE_BOLOS_APP_STACK_CANARY
 
 # Bluetooth
-ifeq ($(TARGET_NAME),TARGET_NANOX)
-    DEFINES       += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
-    DEFINES       += HAVE_BLE_APDU # basic ledger apdu transport over BLE
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
+DEFINES   += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000 HAVE_BLE_APDU
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
     DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+else ifeq ($(TARGET_NAME),TARGET_STAX)
+	DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=300
+	DEFINES       += NBGL_QRCODE
 else
     DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=300
     DEFINES       += HAVE_GLO096
@@ -89,7 +94,9 @@ else
 endif
 
 # Both nano S and X benefit from the flow.
-DEFINES += HAVE_UX_FLOW
+ifneq ($(TARGET_NAME),TARGET_STAX)
+    DEFINES   += HAVE_BAGL HAVE_UX_FLOW
+endif
 
 # Reset the device on crash
 DEFINES += RESET_ON_CRASH
@@ -124,9 +131,12 @@ include $(BOLOS_SDK)/Makefile.glyphs
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
 APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
-SDK_SOURCE_PATH  += lib_ux
 
-ifeq ($(TARGET_NAME),TARGET_NANOX)
+ifneq ($(TARGET_NAME),TARGET_STAX)
+SDK_SOURCE_PATH  += lib_ux
+endif
+
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 endif
 

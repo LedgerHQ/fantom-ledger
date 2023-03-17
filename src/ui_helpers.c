@@ -15,9 +15,7 @@ ui_display_state_t displayState;
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
 
-// make sure the SDK didn't switch to multi-byte character sets.
-STATIC_ASSERT(SIZEOF(uint8_t) == SIZEOF(char), "bad char size");
-
+#ifdef HAVE_BAGL
 // assert_uiPaginatedTextGuard implements verification of the shared state
 // so we know the state is set for paginated text.
 void ui_assertPaginatedTextGuard() {
@@ -172,6 +170,7 @@ void ui_displayPaginatedText(
     // change the UX flow to configured paginated text
     ui_doDisplayPaginatedText();
 }
+#endif
 
 // ui_displayBusy displays busy screen notifying end user that the device
 // is in the middle of processing stuff.
@@ -192,7 +191,8 @@ void ui_displayBusy() {
 void ui_respondWithUserReject() {
     // send the rejection
     io_send_buf(ERR_REJECTED_BY_USER, NULL, 0);
-
+#ifdef HAVE_BAGL
     // switch UX to idle
     ui_idle();
+#endif
 }
